@@ -5,6 +5,11 @@
 
 set -Eeuo pipefail
 
+# Ensure uv is available in PATH if installed
+if [ -d "$HOME/.local/bin" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -159,7 +164,7 @@ install_uv() {
         curl -LsSf https://astral.sh/uv/install.sh | sh
         
         # Add uv to PATH for current session
-        export PATH="$HOME/.cargo/bin:$PATH"
+        export PATH="$HOME/.local/bin:$PATH"
         
         # Verify installation
         if command_exists uv; then
@@ -211,7 +216,7 @@ install_openwebui() {
     log_info "Installing and launching OpenWebUI..."
     
     # Ensure uv is in PATH
-    export PATH="$HOME/.cargo/bin:$PATH"
+    export PATH="$HOME/.local/bin:$PATH"
     
     # Set data directory
     export DATA_DIR="$HOME/.open-webui"
