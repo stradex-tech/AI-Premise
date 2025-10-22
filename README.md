@@ -2,9 +2,15 @@
 
 An appliance server OS that only runs Ollama and OpenWebUI and other common utilities.
 
+## Project Vision
+
+The ultimate goal of AI-Premise is to create a custom Arch Linux ISO that automatically runs this setup script post-install, creating a dedicated appliance server optimized for AI workloads. This will be a minimal, purpose-built operating system that boots directly into a configured Ollama + OpenWebUI environment.
+
+**Current Phase**: Developing and testing the core setup script to ensure it works reliably on bare metal hardware before creating the custom ISO.
+
 ## Arch Linux Setup Script
 
-This repository contains a comprehensive post-install script for Arch Linux that automatically sets up OpenWebUI and Ollama server.
+This repository contains a comprehensive post-install script for Arch Linux that automatically sets up OpenWebUI and Ollama server. This script serves as the foundation for the future appliance OS.
 
 ### Features
 
@@ -50,15 +56,41 @@ This repository contains a comprehensive post-install script for Arch Linux that
 - Internet connection
 - sudo privileges
 
-### Testing on VM
+### Testing on Bare Metal
 
-To test this script on a separate VM, you can download it directly:
+This script is designed for bare metal installation to ensure full GPU access and optimal performance. To test on your hardware:
 
 ```bash
 curl -O https://raw.githubusercontent.com/stradex-tech/AI-Premise/main/arch-openwebui-setup.sh
 chmod +x arch-openwebui-setup.sh
 ./arch-openwebui-setup.sh
 ```
+
+**Note**: Bare metal installation is recommended over VM testing to ensure:
+- Direct GPU access without passthrough complications
+- Full hardware performance
+- Native driver compatibility
+- Optimal AI model acceleration
+
+## Roadmap
+
+### Phase 1: Core Script Development ✅
+- [x] Create comprehensive setup script
+- [x] Implement GPU detection and driver installation
+- [x] Add Ollama and OpenWebUI installation
+- [x] Test on bare metal hardware
+
+### Phase 2: Custom Arch ISO (Future)
+- [ ] Create custom Arch Linux ISO with minimal packages
+- [ ] Integrate setup script into post-install automation
+- [ ] Add boot-time configuration options
+- [ ] Create automated installer for appliance deployment
+
+### Phase 3: Appliance Features (Future)
+- [ ] Web-based management interface
+- [ ] Automated model management
+- [ ] System monitoring and health checks
+- [ ] Backup and recovery tools
 
 ## License
 
