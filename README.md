@@ -29,17 +29,25 @@ This repository contains a comprehensive post-install script for Arch Linux that
 
 ### Usage
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/stradex-tech/AI-Premise.git
-   cd AI-Premise
-   ```
+**Option 1: Download and run directly (Recommended)**
+```bash
+curl -O https://raw.githubusercontent.com/stradex-tech/AI-Premise/main/ai-premise-setup.sh
+chmod +x ai-premise-setup.sh
+./ai-premise-setup.sh
+```
 
-2. Make the script executable and run it:
-   ```bash
-   chmod +x ai-premise-setup.sh
-   ./ai-premise-setup.sh
-   ```
+**Option 2: One-liner (download and run)**
+```bash
+curl -sSL https://raw.githubusercontent.com/stradex-tech/AI-Premise/main/ai-premise-setup.sh | bash
+```
+
+**Option 3: Clone repository**
+```bash
+git clone https://github.com/stradex-tech/AI-Premise.git
+cd AI-Premise
+chmod +x ai-premise-setup.sh
+./ai-premise-setup.sh
+```
 
 3. Access the services:
    - **OpenWebUI**: https://openwebui.local (AI chat interface)
