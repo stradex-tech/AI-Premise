@@ -140,16 +140,38 @@ install_intel_drivers() {
     log_success "Intel compute runtime drivers installed successfully"
 }
 
-# Step 3: Ensure Curl Installed
-ensure_curl() {
-    log_info "Ensuring curl is installed..."
+# Step 3: Ensure Essential Tools Installed
+ensure_essential_tools() {
+    log_info "Ensuring essential tools are installed..."
     
+    # Install curl
     if command_exists curl; then
         log_info "curl is already installed"
     else
         log_info "Installing curl..."
         sudo pacman -S --noconfirm curl
         log_success "curl installed successfully"
+    fi
+    
+    # Install OpenSSH
+    if command_exists ssh; then
+        log_info "OpenSSH is already installed"
+    else
+        log_info "Installing OpenSSH..."
+        sudo pacman -S --noconfirm openssh
+        log_success "OpenSSH installed successfully"
+    fi
+    
+    # Enable and start SSH service
+    log_info "Configuring SSH service..."
+    sudo systemctl enable sshd
+    sudo systemctl start sshd
+    
+    # Verify SSH is running
+    if systemctl is-active --quiet sshd; then
+        log_success "SSH service is running"
+    else
+        log_warning "SSH service may not be running properly"
     fi
 }
 
@@ -533,7 +555,7 @@ main() {
     # Execute steps in order
     system_update
     install_gpu_drivers
-    ensure_curl
+    ensure_essential_tools
     install_uv
     install_ollama
     install_caddy
@@ -555,6 +577,7 @@ main() {
     log_info "  - Main Dashboard: https://ai-premise.local"
     log_info "Local domains have been automatically configured in /etc/hosts"
     log_info "UFW firewall is active - only HTTPS (port 443) and SSH (port 22) are accessible externally"
+    log_info "SSH service is enabled for remote administration"
     log_info "All services are configured to start automatically on system reboot"
 }
 
