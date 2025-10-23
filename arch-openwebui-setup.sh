@@ -334,20 +334,20 @@ install_openwebui() {
     log_info "Creating OpenWebUI systemd service..."
     
     # Create systemd service for OpenWebUI
-    sudo tee /etc/systemd/system/openwebui.service > /dev/null << 'EOF'
+    sudo tee /etc/systemd/system/openwebui.service > /dev/null << EOF
 [Unit]
 Description=OpenWebUI Server
 After=network.target ollama.service
 
 [Service]
 Type=simple
-User=stradex
-Group=stradex
-WorkingDirectory=/home/stradex
-Environment=HOME=/home/stradex
-Environment=DATA_DIR=/home/stradex/.open-webui
-Environment=PATH=/home/stradex/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/stradex/.local/bin/uvx --python 3.11 open-webui@latest serve
+User=$USER
+Group=$USER
+WorkingDirectory=$HOME
+Environment=HOME=$HOME
+Environment=DATA_DIR=$HOME/.open-webui
+Environment=PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=$HOME/.local/bin/uvx --python 3.11 open-webui@latest serve
 Restart=always
 RestartSec=10
 
@@ -355,9 +355,6 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-    # Replace 'stradex' with actual username
-    sudo sed -i "s/stradex/$USER/g" /etc/systemd/system/openwebui.service
-    
     # Reload systemd and enable service
     sudo systemctl daemon-reload
     sudo systemctl enable openwebui
@@ -517,26 +514,23 @@ configure_glances_web() {
     log_info "Configuring Glances web server..."
     
     # Create systemd service for Glances web server
-    sudo tee /etc/systemd/system/glances-web.service > /dev/null << 'EOF'
+    sudo tee /etc/systemd/system/glances-web.service > /dev/null << EOF
 [Unit]
 Description=Glances Web Server
 After=network.target
 
 [Service]
 Type=simple
-User=stradex
-Group=stradex
+User=$USER
+Group=$USER
 ExecStart=/usr/bin/glances -w -B 127.0.0.1 -p 61208
 Restart=always
 RestartSec=10
-Environment=HOME=/home/stradex
+Environment=HOME=$HOME
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
-    # Replace 'stradex' with actual username
-    sudo sed -i "s/stradex/$USER/g" /etc/systemd/system/glances-web.service
     
     # Reload systemd and enable service
     sudo systemctl daemon-reload
