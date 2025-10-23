@@ -269,31 +269,34 @@ configure_caddy() {
 # OpenWebUI HTTPS Proxy
 openwebui.local {
     tls internal
-    reverse_proxy 127.0.0.1:8080
-    header_up Host {host}
-    header_up X-Real-IP {remote}
-    header_up X-Forwarded-For {remote}
-    header_up X-Forwarded-Proto {scheme}
+    reverse_proxy 127.0.0.1:8080 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
 }
 
 # Ollama API HTTPS Proxy
 ollama.local {
     tls internal
-    reverse_proxy 127.0.0.1:11434
-    header_up Host {host}
-    header_up X-Real-IP {remote}
-    header_up X-Forwarded-For {remote}
-    header_up X-Forwarded-Proto {scheme}
+    reverse_proxy 127.0.0.1:11434 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
 }
 
 # Glances System Monitor HTTPS Proxy
 monitor.local {
     tls internal
-    reverse_proxy 127.0.0.1:61208
-    header_up Host {host}
-    header_up X-Real-IP {remote}
-    header_up X-Forwarded-For {remote}
-    header_up X-Forwarded-Proto {scheme}
+    reverse_proxy 127.0.0.1:61208 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
 }
 EOF
 
