@@ -37,8 +37,8 @@ This repository contains a comprehensive post-install script for Arch Linux that
 
 2. Make the script executable and run it:
    ```bash
-   chmod +x arch-openwebui-setup.sh
-   ./arch-openwebui-setup.sh
+   chmod +x ai-premise-setup.sh
+   ./ai-premise-setup.sh
    ```
 
 3. Access the services:

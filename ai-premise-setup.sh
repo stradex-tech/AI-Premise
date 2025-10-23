@@ -295,12 +295,6 @@ monitor.local {
     header_up X-Forwarded-For {remote}
     header_up X-Forwarded-Proto {scheme}
 }
-
-# Main dashboard (redirects to OpenWebUI)
-ai-premise.local {
-    tls internal
-    redir / https://openwebui.local{uri} permanent
-}
 EOF
 
     # Set proper permissions
@@ -315,7 +309,6 @@ EOF
     log_info "  - OpenWebUI: https://openwebui.local"
     log_info "  - Ollama API: https://ollama.local"
     log_info "  - System Monitor: https://monitor.local"
-    log_info "  - Dashboard: https://ai-premise.local"
 }
 
 # Step 8: Install and Configure OpenWebUI
@@ -375,7 +368,7 @@ configure_hosts() {
         log_info "Host entries already exist in /etc/hosts"
     else
         log_info "Adding local domain entries to /etc/hosts..."
-        echo "127.0.0.1 openwebui.local ollama.local ai-premise.local monitor.local" | sudo tee -a /etc/hosts > /dev/null
+        echo "127.0.0.1 openwebui.local ollama.local monitor.local" | sudo tee -a /etc/hosts > /dev/null
         log_success "Local domains added to /etc/hosts"
     fi
 }
@@ -568,7 +561,6 @@ main() {
     log_info "  - Ollama API HTTPS: https://ollama.local"
     log_info "  - System Monitor HTTP: http://127.0.0.1:61208 (local only)"
     log_info "  - System Monitor HTTPS: https://monitor.local"
-    log_info "  - Main Dashboard: https://ai-premise.local"
     log_info "Local domains have been automatically configured in /etc/hosts"
     log_info "UFW firewall is active - only HTTPS (port 443) and SSH (port 22) are accessible externally"
     log_info "SSH service is enabled for remote administration"
