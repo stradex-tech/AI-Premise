@@ -446,7 +446,7 @@ install_glances() {
 [global]
 theme = white
 check_update = False
-disable = true   # disable all plugins by default
+disable = true
 
 # 🧩 Enable only desired plugins
 [plugins]
@@ -486,7 +486,7 @@ alias = 🎮 GPU 🌡️
 [sensors]
 enable = true
 alias = 🔥 System Temps
-hide_temp_under = 35  # optional: hide sensors under 35°C
+hide_temp_under = 35
 
 # 🔌 Disable everything else
 [network]
