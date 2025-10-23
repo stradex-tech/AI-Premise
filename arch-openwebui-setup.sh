@@ -296,9 +296,9 @@ EOF
     log_info "  - Dashboard: https://ai-premise.local"
 }
 
-# Step 8: Install and Launch OpenWebUI
+# Step 8: Install and Configure OpenWebUI
 install_openwebui() {
-    log_info "Installing and launching OpenWebUI..."
+    log_info "Installing and configuring OpenWebUI..."
     
     # Ensure uv is in PATH
     export PATH="$HOME/.local/bin:$PATH"
@@ -309,17 +309,42 @@ install_openwebui() {
     # Create data directory if it doesn't exist
     mkdir -p "$DATA_DIR"
     
-    log_info "Starting OpenWebUI server..."
-    log_info "Data directory: $DATA_DIR"
+    log_info "Creating OpenWebUI systemd service..."
+    
+    # Create systemd service for OpenWebUI
+    sudo tee /etc/systemd/system/openwebui.service > /dev/null << 'EOF'
+[Unit]
+Description=OpenWebUI Server
+After=network.target ollama.service
+
+[Service]
+Type=simple
+User=stradex
+Group=stradex
+WorkingDirectory=/home/stradex
+Environment=HOME=/home/stradex
+Environment=DATA_DIR=/home/stradex/.open-webui
+Environment=PATH=/home/stradex/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/stradex/.local/bin/uvx --python 3.11 open-webui@latest serve
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Replace 'stradex' with actual username
+    sudo sed -i "s/stradex/$USER/g" /etc/systemd/system/openwebui.service
+    
+    # Reload systemd and enable service
+    sudo systemctl daemon-reload
+    sudo systemctl enable openwebui
+    sudo systemctl start openwebui
+    
+    log_success "OpenWebUI configured and started"
     log_info "OpenWebUI will be available at:"
     log_info "  - HTTP: http://localhost:8080"
     log_info "  - HTTPS: https://openwebui.local"
-    
-    # Launch OpenWebUI
-    uvx --python 3.11 open-webui@latest serve
-    
-    # Note: This will run in foreground. For production, consider creating a systemd service
-    # TODO: Add systemd service integration for production deployment
 }
 
 # Step 9: Configure hosts file
@@ -530,6 +555,7 @@ main() {
     log_info "  - Main Dashboard: https://ai-premise.local"
     log_info "Local domains have been automatically configured in /etc/hosts"
     log_info "UFW firewall is active - only HTTPS (port 443) and SSH (port 22) are accessible externally"
+    log_info "All services are configured to start automatically on system reboot"
 }
 
 # Run main function
