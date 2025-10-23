@@ -23,6 +23,9 @@ This repository contains a comprehensive post-install script for Arch Linux that
 - **Astral uv Installation**: Modern Python package manager
 - **Ollama Setup**: Official installation with systemd service
 - **OpenWebUI Installation**: Using uvx with Python 3.11
+- **Caddy HTTPS Proxy**: Automatic HTTPS with self-signed certificates
+- **UFW Firewall**: Secure firewall configuration (HTTPS and SSH only)
+- **Glances Monitoring**: Real-time system monitoring with temperature tracking
 
 ### Usage
 
@@ -39,8 +42,10 @@ This repository contains a comprehensive post-install script for Arch Linux that
    ```
 
 3. Access the services:
-   - OpenWebUI: http://localhost:8080
-   - Ollama API: http://127.0.0.1:11434
+   - **OpenWebUI**: https://openwebui.local (AI chat interface)
+   - **Ollama API**: https://ollama.local (AI model API)
+   - **System Monitor**: https://monitor.local (Real-time monitoring)
+   - **Main Dashboard**: https://ai-premise.local (Redirects to OpenWebUI)
 
 ### Script Features
 
@@ -49,6 +54,9 @@ This repository contains a comprehensive post-install script for Arch Linux that
 - **Error Handling**: Graceful failure handling with `set -Eeuo pipefail`
 - **Service Verification**: Checks if services are running properly
 - **Clean Structure**: Modular functions for maintainability
+- **HTTPS Security**: Automatic SSL certificates and secure access
+- **Firewall Protection**: UFW configured for maximum security
+- **System Monitoring**: Real-time performance and temperature tracking
 
 ### Requirements
 
@@ -56,21 +64,20 @@ This repository contains a comprehensive post-install script for Arch Linux that
 - Internet connection
 - sudo privileges
 
-### Testing on Bare Metal
+### Security Features
 
-This script is designed for bare metal installation to ensure full GPU access and optimal performance. To test on your hardware:
+- **HTTPS Only**: All web services accessible only through secure HTTPS
+- **Self-Signed Certificates**: Automatic SSL certificate generation
+- **UFW Firewall**: Only ports 443 (HTTPS) and 22 (SSH) are open
+- **Local Domains**: Clean `.local` domains instead of IP addresses
+- **Backend Protection**: Direct access to backend services blocked
 
-```bash
-curl -O https://raw.githubusercontent.com/stradex-tech/AI-Premise/main/arch-openwebui-setup.sh
-chmod +x arch-openwebui-setup.sh
-./arch-openwebui-setup.sh
-```
+### System Monitoring
 
-**Note**: Bare metal installation is recommended over VM testing to ensure:
-- Direct GPU access without passthrough complications
-- Full hardware performance
-- Native driver compatibility
-- Optimal AI model acceleration
+- **Real-Time Monitoring**: CPU, Memory, Disk, GPU usage and temperatures
+- **Temperature Tracking**: CPU, GPU, and system sensor monitoring
+- **Clean Interface**: Minimal, focused monitoring dashboard
+- **HTTPS Access**: Secure monitoring via `https://monitor.local`
 
 ## Roadmap
 
@@ -78,6 +85,9 @@ chmod +x arch-openwebui-setup.sh
 - [x] Create comprehensive setup script
 - [x] Implement GPU detection and driver installation
 - [x] Add Ollama and OpenWebUI installation
+- [x] Add Caddy HTTPS proxy with self-signed certificates
+- [x] Configure UFW firewall for security
+- [x] Add Glances system monitoring
 - [x] Test on bare metal hardware
 
 ### Phase 2: Custom Arch ISO (Future)
