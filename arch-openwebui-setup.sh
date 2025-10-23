@@ -211,7 +211,92 @@ install_ollama() {
     fi
 }
 
-# Step 6: Install and Launch OpenWebUI
+# Step 6: Install Caddy
+install_caddy() {
+    log_info "Installing Caddy web server..."
+    
+    if command_exists caddy; then
+        log_info "Caddy is already installed. Version: $(caddy version)"
+    else
+        log_info "Installing Caddy..."
+        sudo pacman -S --noconfirm caddy
+        
+        # Enable and start Caddy service
+        sudo systemctl enable --now caddy
+        log_success "Caddy installed and started successfully"
+    fi
+}
+
+# Step 7: Configure Caddy with self-signed certificates
+configure_caddy() {
+    log_info "Configuring Caddy with self-signed certificates..."
+    
+    # Create Caddy data directory
+    sudo mkdir -p /var/lib/caddy
+    
+    # Create Caddyfile
+    sudo tee /etc/caddy/Caddyfile > /dev/null << 'EOF'
+# AI-Premise HTTPS Configuration
+{
+    # Enable automatic HTTPS with self-signed certificates
+    auto_https off
+    # Use internal CA for self-signed certs
+    local_certs
+}
+
+# OpenWebUI HTTPS Proxy
+openwebui.local {
+    tls internal
+    reverse_proxy 127.0.0.1:8080
+    header_up Host {host}
+    header_up X-Real-IP {remote}
+    header_up X-Forwarded-For {remote}
+    header_up X-Forwarded-Proto {scheme}
+}
+
+# Ollama API HTTPS Proxy
+ollama.local {
+    tls internal
+    reverse_proxy 127.0.0.1:11434
+    header_up Host {host}
+    header_up X-Real-IP {remote}
+    header_up X-Forwarded-For {remote}
+    header_up X-Forwarded-Proto {scheme}
+}
+
+# Glances System Monitor HTTPS Proxy
+monitor.local {
+    tls internal
+    reverse_proxy 127.0.0.1:61208
+    header_up Host {host}
+    header_up X-Real-IP {remote}
+    header_up X-Forwarded-For {remote}
+    header_up X-Forwarded-Proto {scheme}
+}
+
+# Main dashboard (redirects to OpenWebUI)
+ai-premise.local {
+    tls internal
+    redir / https://openwebui.local{uri} permanent
+}
+EOF
+
+    # Set proper permissions
+    sudo chown caddy:caddy /etc/caddy/Caddyfile
+    sudo chmod 644 /etc/caddy/Caddyfile
+    
+    # Restart Caddy to apply configuration
+    sudo systemctl restart caddy
+    
+    log_success "Caddy configured with self-signed certificates"
+    log_info "HTTPS endpoints:"
+    log_info "  - OpenWebUI: https://openwebui.local"
+    log_info "  - Ollama API: https://ollama.local"
+    log_info "  - System Monitor: https://monitor.local"
+    log_info "  - Dashboard: https://ai-premise.local"
+}
+
+# Step 8: Install and Launch OpenWebUI
 install_openwebui() {
     log_info "Installing and launching OpenWebUI..."
     
@@ -226,13 +311,193 @@ install_openwebui() {
     
     log_info "Starting OpenWebUI server..."
     log_info "Data directory: $DATA_DIR"
-    log_info "OpenWebUI will be available at: http://localhost:8080"
+    log_info "OpenWebUI will be available at:"
+    log_info "  - HTTP: http://localhost:8080"
+    log_info "  - HTTPS: https://openwebui.local"
     
     # Launch OpenWebUI
     uvx --python 3.11 open-webui@latest serve
     
     # Note: This will run in foreground. For production, consider creating a systemd service
     # TODO: Add systemd service integration for production deployment
+}
+
+# Step 9: Configure hosts file
+configure_hosts() {
+    log_info "Configuring /etc/hosts for local domains..."
+    
+    # Check if entries already exist
+    if grep -q "openwebui.local" /etc/hosts; then
+        log_info "Host entries already exist in /etc/hosts"
+    else
+        log_info "Adding local domain entries to /etc/hosts..."
+        echo "127.0.0.1 openwebui.local ollama.local ai-premise.local monitor.local" | sudo tee -a /etc/hosts > /dev/null
+        log_success "Local domains added to /etc/hosts"
+    fi
+}
+
+# Step 10: Configure UFW Firewall
+configure_firewall() {
+    log_info "Configuring UFW firewall..."
+    
+    if command_exists ufw; then
+        log_info "UFW is already installed"
+    else
+        log_info "Installing UFW firewall..."
+        sudo pacman -S --noconfirm ufw
+        log_success "UFW installed successfully"
+    fi
+    
+    # Reset UFW to default state
+    log_info "Resetting UFW to default state..."
+    sudo ufw --force reset
+    
+    # Set default policies
+    log_info "Setting default firewall policies..."
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    
+    # Allow SSH (in case user needs remote access)
+    log_info "Allowing SSH access..."
+    sudo ufw allow ssh
+    
+    # Allow HTTPS traffic on port 443
+    log_info "Allowing HTTPS traffic on port 443..."
+    sudo ufw allow 443/tcp
+    
+    # Enable UFW
+    log_info "Enabling UFW firewall..."
+    sudo ufw --force enable
+    
+    # Show firewall status
+    log_success "UFW firewall configured successfully"
+    log_info "Firewall status:"
+    sudo ufw status numbered
+    
+    log_info "Firewall rules:"
+    log_info "  - SSH (port 22): ALLOWED"
+    log_info "  - HTTPS (port 443): ALLOWED"
+    log_info "  - All other incoming traffic: DENIED"
+    log_info "  - All outgoing traffic: ALLOWED"
+}
+
+# Step 11: Install and Configure Glances
+install_glances() {
+    log_info "Installing Glances system monitor..."
+    
+    if command_exists glances; then
+        log_info "Glances is already installed. Version: $(glances --version)"
+    else
+        log_info "Installing Glances..."
+        sudo pacman -S --noconfirm glances
+        log_success "Glances installed successfully"
+    fi
+    
+    # Create glances config directory
+    log_info "Creating Glances configuration..."
+    mkdir -p ~/.config/glances
+    
+    # Create custom glances configuration
+    cat > ~/.config/glances/glances.conf << 'EOF'
+# ~/.config/glances/glances.conf
+# 🌡️ Minimal Glances config for system monitoring (with temperatures)
+# Author: Stradex
+
+[global]
+theme = white
+check_update = False
+disable = true   # disable all plugins by default
+
+# 🧩 Enable only desired plugins
+[plugins]
+enable = cpu, mem, fs, gpu, sensors
+
+# 🧠 CPU Section
+[cpu]
+enable = true
+percpu = true
+show_cpu_temp = true
+alias = 🧠 CPU Usage 🌡️
+
+# 💾 Memory Section
+[mem]
+enable = true
+show_swap = True
+alias = 💾 Memory
+
+# 📀 Disk Section (Filesystem)
+[fs]
+enable = true
+hide_fs_type = tmpfs,devtmpfs
+hide_mount_point = /boot,/run
+alias = 📀 Disk Usage 🌡️
+
+# 🎮 GPU Section
+[gpu]
+enable = true
+show_name = true
+show_memory = true
+show_temp = true
+show_power = false
+show_clock = false
+alias = 🎮 GPU 🌡️
+
+# 🌡️ Sensors (for CPU, motherboard, or SSD temps)
+[sensors]
+enable = true
+alias = 🔥 System Temps
+hide_temp_under = 35  # optional: hide sensors under 35°C
+
+# 🔌 Disable everything else
+[network]
+enable = false
+
+[docker]
+enable = false
+
+[processlist]
+enable = false
+
+[quicklook]
+enable = false
+EOF
+
+    log_success "Glances configuration created"
+}
+
+# Step 12: Configure Glances Web Server
+configure_glances_web() {
+    log_info "Configuring Glances web server..."
+    
+    # Create systemd service for Glances web server
+    sudo tee /etc/systemd/system/glances-web.service > /dev/null << 'EOF'
+[Unit]
+Description=Glances Web Server
+After=network.target
+
+[Service]
+Type=simple
+User=stradex
+Group=stradex
+ExecStart=/usr/bin/glances -w -B 127.0.0.1 -p 61208
+Restart=always
+RestartSec=10
+Environment=HOME=/home/stradex
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Replace 'stradex' with actual username
+    sudo sed -i "s/stradex/$USER/g" /etc/systemd/system/glances-web.service
+    
+    # Reload systemd and enable service
+    sudo systemctl daemon-reload
+    sudo systemctl enable glances-web
+    sudo systemctl start glances-web
+    
+    log_success "Glances web server configured and started"
+    log_info "Glances web interface available at: http://127.0.0.1:61208"
 }
 
 # Main execution
@@ -246,11 +511,25 @@ main() {
     ensure_curl
     install_uv
     install_ollama
+    install_caddy
+    configure_caddy
+    configure_hosts
+    configure_firewall
+    install_glances
+    configure_glances_web
     install_openwebui
     
     log_success "Setup completed successfully!"
-    log_info "OpenWebUI should now be running at http://localhost:8080"
-    log_info "Ollama API is available at http://127.0.0.1:11434"
+    log_info "Services are now running:"
+    log_info "  - OpenWebUI HTTP: http://localhost:8080 (local only)"
+    log_info "  - OpenWebUI HTTPS: https://openwebui.local"
+    log_info "  - Ollama API HTTP: http://127.0.0.1:11434 (local only)"
+    log_info "  - Ollama API HTTPS: https://ollama.local"
+    log_info "  - System Monitor HTTP: http://127.0.0.1:61208 (local only)"
+    log_info "  - System Monitor HTTPS: https://monitor.local"
+    log_info "  - Main Dashboard: https://ai-premise.local"
+    log_info "Local domains have been automatically configured in /etc/hosts"
+    log_info "UFW firewall is active - only HTTPS (port 443) and SSH (port 22) are accessible externally"
 }
 
 # Run main function
