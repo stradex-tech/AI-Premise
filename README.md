@@ -45,7 +45,6 @@ This repository contains a comprehensive post-install script for Arch Linux that
    - **OpenWebUI**: https://openwebui.local (AI chat interface)
    - **Ollama API**: https://ollama.local (AI model API)
    - **System Monitor**: https://monitor.local (Real-time monitoring)
-   - **Main Dashboard**: https://ai-premise.local (Redirects to OpenWebUI)
 
 ### Script Features
 
