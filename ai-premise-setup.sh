@@ -262,8 +262,6 @@ configure_caddy() {
 {
     # Enable automatic HTTPS with self-signed certificates
     auto_https off
-    # Use internal CA for self-signed certs
-    local_certs
 }
 
 # OpenWebUI HTTPS Proxy
