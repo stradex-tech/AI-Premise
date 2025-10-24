@@ -278,7 +278,7 @@ configure_caddy() {
 
 # OpenWebUI HTTPS Proxy
 openwebui.local {
-    tls self_signed
+    tls internal
     reverse_proxy 127.0.0.1:8080 {
         header_up Host {host}
         header_up X-Real-IP {remote}
@@ -289,7 +289,7 @@ openwebui.local {
 
 # Ollama API HTTPS Proxy
 ollama.local {
-    tls self_signed
+    tls internal
     reverse_proxy 127.0.0.1:11434 {
         header_up Host {host}
         header_up X-Real-IP {remote}
@@ -300,7 +300,7 @@ ollama.local {
 
 # Glances System Monitor HTTPS Proxy
 monitor.local {
-    tls self_signed
+    tls internal
     reverse_proxy 127.0.0.1:61208 {
         header_up Host {host}
         header_up X-Real-IP {remote}
