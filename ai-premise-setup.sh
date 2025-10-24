@@ -263,9 +263,9 @@ configure_nginx() {
     # Create SSL directory
     sudo mkdir -p /etc/nginx/ssl
     
-    # Generate self-signed certificate (100 years validity)
+    # Generate self-signed certificate (10 years validity)
     log_info "Generating self-signed SSL certificate..."
-    sudo openssl req -x509 -nodes -days 36500 -newkey rsa:2048 \
+    sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
         -keyout /etc/nginx/ssl/nginx.key \
         -out /etc/nginx/ssl/nginx.crt \
         -subj "/C=US/ST=State/L=City/O=AI-Premise/CN=localhost" \
@@ -648,7 +648,7 @@ main() {
     log_info "  - System Monitor HTTPS: https://monitor.local"
     log_info "Local domains have been automatically configured in /etc/hosts"
     log_info "UFW firewall is active - only HTTPS (port 443) and SSH (port 22) are accessible externally"
-    log_info "Nginx HTTPS proxy is running with 100-year self-signed certificates"
+    log_info "Nginx HTTPS proxy is running with 10-year self-signed certificates"
     log_info "SSH service is enabled for remote administration"
     log_info "All services are configured to start automatically on system reboot"
 }
