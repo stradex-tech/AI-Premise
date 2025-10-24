@@ -438,10 +438,14 @@ EOF
     sudo systemctl enable openwebui
     sudo systemctl start openwebui
     
+    # Get server IP address for display
+    SERVER_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null || echo "127.0.0.1")
+    
     log_success "OpenWebUI configured and started"
     log_info "OpenWebUI will be available at:"
-    log_info "  - HTTP: http://127.0.0.1:8080"
-    log_info "  - HTTPS: https://127.0.0.1:8443"
+    log_info "  - HTTP: http://127.0.0.1:8080 (local only)"
+    log_info "  - HTTPS: https://127.0.0.1:8443 (self-signed cert)"
+    log_info "  - HTTPS (Remote): https://${SERVER_IP}:8443 (self-signed cert)"
 }
 
 # Step 9: Configure UFW Firewall
@@ -631,18 +635,26 @@ main() {
     configure_glances_web
     install_openwebui
     
+    # Get server IP address
+    SERVER_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null || echo "127.0.0.1")
+    
     log_success "Setup completed successfully!"
     log_info "Services are now running:"
     log_info "  - OpenWebUI HTTP: http://127.0.0.1:8080 (local only)"
     log_info "  - OpenWebUI HTTPS: https://127.0.0.1:8443 (self-signed cert)"
+    log_info "  - OpenWebUI HTTPS (Remote): https://${SERVER_IP}:8443 (self-signed cert)"
     log_info "  - Ollama API HTTP: http://127.0.0.1:11434 (local only)"
     log_info "  - Ollama API HTTPS: https://127.0.0.1:11435 (self-signed cert)"
+    log_info "  - Ollama API HTTPS (Remote): https://${SERVER_IP}:11435 (self-signed cert)"
     log_info "  - System Monitor HTTP: http://127.0.0.1:61208 (local only)"
     log_info "  - System Monitor HTTPS: https://127.0.0.1:61209 (self-signed cert)"
+    log_info "  - System Monitor HTTPS (Remote): https://${SERVER_IP}:61209 (self-signed cert)"
     log_info "UFW firewall is active - HTTP (80), HTTPS (443, 8443, 11435, 61209) and SSH (22) are accessible"
     log_info "Nginx HTTPS proxy is running with 10-year self-signed certificates"
     log_info "SSH service is enabled for remote administration"
     log_info "All services are configured to start automatically on system reboot"
+    log_info ""
+    log_info "Server IP Address: ${SERVER_IP}"
 }
 
 # Run main function
