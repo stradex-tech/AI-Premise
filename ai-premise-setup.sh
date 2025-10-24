@@ -309,10 +309,10 @@ http {
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 10m;
     
-    # OpenWebUI HTTPS Proxy
+    # OpenWebUI HTTPS Proxy (port 8443)
     server {
-        listen 443 ssl http2;
-        server_name openwebui.local;
+        listen 8443 ssl http2;
+        server_name _;
         
         ssl_certificate /etc/nginx/ssl/nginx.crt;
         ssl_certificate_key /etc/nginx/ssl/nginx.key;
@@ -328,10 +328,10 @@ http {
         }
     }
     
-    # Ollama API HTTPS Proxy
+    # Ollama API HTTPS Proxy (port 11435)
     server {
-        listen 443 ssl http2;
-        server_name ollama.local;
+        listen 11435 ssl http2;
+        server_name _;
         
         ssl_certificate /etc/nginx/ssl/nginx.crt;
         ssl_certificate_key /etc/nginx/ssl/nginx.key;
@@ -347,10 +347,10 @@ http {
         }
     }
     
-    # Glances System Monitor HTTPS Proxy
+    # Glances System Monitor HTTPS Proxy (port 61209)
     server {
-        listen 443 ssl http2;
-        server_name monitor.local;
+        listen 61209 ssl http2;
+        server_name _;
         
         ssl_certificate /etc/nginx/ssl/nginx.crt;
         ssl_certificate_key /etc/nginx/ssl/nginx.key;
@@ -440,25 +440,11 @@ EOF
     
     log_success "OpenWebUI configured and started"
     log_info "OpenWebUI will be available at:"
-    log_info "  - HTTP: http://localhost:8080"
-    log_info "  - HTTPS: https://openwebui.local"
+    log_info "  - HTTP: http://127.0.0.1:8080"
+    log_info "  - HTTPS: https://127.0.0.1:8443"
 }
 
-# Step 9: Configure hosts file
-configure_hosts() {
-    log_info "Configuring /etc/hosts for local domains..."
-    
-    # Check if entries already exist
-    if grep -q "openwebui.local" /etc/hosts; then
-        log_info "Host entries already exist in /etc/hosts"
-    else
-        log_info "Adding local domain entries to /etc/hosts..."
-        echo "127.0.0.1 openwebui.local ollama.local monitor.local" | sudo tee -a /etc/hosts > /dev/null
-        log_success "Local domains added to /etc/hosts"
-    fi
-}
-
-# Step 10: Configure UFW Firewall
+# Step 9: Configure UFW Firewall
 configure_firewall() {
     log_info "Configuring UFW firewall..."
     
@@ -483,9 +469,17 @@ configure_firewall() {
     log_info "Allowing SSH access..."
     sudo ufw allow ssh
     
-    # Allow HTTPS traffic on port 443
+    # Allow HTTP and HTTPS traffic
+    log_info "Allowing HTTP traffic on port 80..."
+    sudo ufw allow 80/tcp
     log_info "Allowing HTTPS traffic on port 443..."
     sudo ufw allow 443/tcp
+    log_info "Allowing HTTPS traffic on port 8443..."
+    sudo ufw allow 8443/tcp
+    log_info "Allowing HTTPS traffic on port 11435..."
+    sudo ufw allow 11435/tcp
+    log_info "Allowing HTTPS traffic on port 61209..."
+    sudo ufw allow 61209/tcp
     
     # Enable UFW
     log_info "Enabling UFW firewall..."
@@ -632,7 +626,6 @@ main() {
     install_ollama
     install_nginx
     configure_nginx
-    configure_hosts
     configure_firewall
     install_glances
     configure_glances_web
@@ -640,14 +633,13 @@ main() {
     
     log_success "Setup completed successfully!"
     log_info "Services are now running:"
-    log_info "  - OpenWebUI HTTP: http://localhost:8080 (local only)"
-    log_info "  - OpenWebUI HTTPS: https://openwebui.local"
+    log_info "  - OpenWebUI HTTP: http://127.0.0.1:8080 (local only)"
+    log_info "  - OpenWebUI HTTPS: https://127.0.0.1:8443 (self-signed cert)"
     log_info "  - Ollama API HTTP: http://127.0.0.1:11434 (local only)"
-    log_info "  - Ollama API HTTPS: https://ollama.local"
+    log_info "  - Ollama API HTTPS: https://127.0.0.1:11435 (self-signed cert)"
     log_info "  - System Monitor HTTP: http://127.0.0.1:61208 (local only)"
-    log_info "  - System Monitor HTTPS: https://monitor.local"
-    log_info "Local domains have been automatically configured in /etc/hosts"
-    log_info "UFW firewall is active - only HTTPS (port 443) and SSH (port 22) are accessible externally"
+    log_info "  - System Monitor HTTPS: https://127.0.0.1:61209 (self-signed cert)"
+    log_info "UFW firewall is active - HTTP (80), HTTPS (443, 8443, 11435, 61209) and SSH (22) are accessible"
     log_info "Nginx HTTPS proxy is running with 10-year self-signed certificates"
     log_info "SSH service is enabled for remote administration"
     log_info "All services are configured to start automatically on system reboot"
