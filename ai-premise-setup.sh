@@ -241,11 +241,23 @@ install_caddy() {
         log_info "Caddy is already installed. Version: $(caddy version)"
     else
         log_info "Installing Caddy..."
-        sudo pacman -S --noconfirm caddy
+        # Force non-interactive installation
+        sudo pacman -S --noconfirm --needed caddy
+        
+        # Wait a moment for installation to complete
+        sleep 2
         
         # Enable and start Caddy service
-        sudo systemctl enable --now caddy
-        log_success "Caddy installed and started successfully"
+        sudo systemctl enable caddy
+        sudo systemctl start caddy
+        
+        # Verify installation
+        if command_exists caddy; then
+            log_success "Caddy installed and started successfully"
+        else
+            log_error "Failed to install Caddy"
+            exit 1
+        fi
     fi
 }
 
