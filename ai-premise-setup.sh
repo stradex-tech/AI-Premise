@@ -513,7 +513,7 @@ install_glances() {
     
     # Install Python dependencies for web server mode
     log_info "Installing Glances web server dependencies..."
-    pip install fastapi uvicorn
+    uv pip install fastapi uvicorn
     log_success "Glances web dependencies installed"
     
     # Create glances config directory
