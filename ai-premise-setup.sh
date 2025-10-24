@@ -513,6 +513,7 @@ install_glances() {
     
     # Install Python dependencies for web server mode
     log_info "Installing Glances web server dependencies..."
+    export PATH="$HOME/.local/bin:$PATH"
     uv pip install fastapi uvicorn
     log_success "Glances web dependencies installed"
     
