@@ -511,6 +511,11 @@ install_glances() {
         log_success "Glances installed successfully"
     fi
     
+    # Install Python dependencies for web server mode
+    log_info "Installing Glances web server dependencies..."
+    pip install fastapi uvicorn
+    log_success "Glances web dependencies installed"
+    
     # Create glances config directory
     log_info "Creating Glances configuration..."
     mkdir -p ~/.config/glances
