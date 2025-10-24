@@ -233,95 +233,167 @@ install_ollama() {
     fi
 }
 
-# Step 6: Install Caddy
-install_caddy() {
-    log_info "Installing Caddy web server..."
+# Step 6: Install Nginx
+install_nginx() {
+    log_info "Installing Nginx web server..."
     
-    if command_exists caddy; then
-        log_info "Caddy is already installed. Version: $(caddy version)"
+    if command_exists nginx; then
+        log_info "Nginx is already installed. Version: $(nginx -v 2>&1)"
     else
-        log_info "Installing Caddy..."
-        # Force non-interactive installation
-        sudo pacman -S --noconfirm --needed caddy
+        log_info "Installing Nginx and OpenSSL..."
+        sudo pacman -S --noconfirm --needed nginx openssl
         
         # Wait a moment for installation to complete
         sleep 2
         
-        # Enable and start Caddy service
-        sudo systemctl enable caddy
-        sudo systemctl start caddy
-        
         # Verify installation
-        if command_exists caddy; then
-            log_success "Caddy installed and started successfully"
+        if command_exists nginx; then
+            log_success "Nginx installed successfully"
         else
-            log_error "Failed to install Caddy"
+            log_error "Failed to install Nginx"
             exit 1
         fi
     fi
 }
 
-# Step 7: Configure Caddy with self-signed certificates
-configure_caddy() {
-    log_info "Configuring Caddy with self-signed certificates..."
+# Step 7: Configure Nginx with self-signed certificates
+configure_nginx() {
+    log_info "Configuring Nginx with self-signed certificates..."
     
-    # Create Caddy data directory
-    sudo mkdir -p /var/lib/caddy
+    # Create SSL directory
+    sudo mkdir -p /etc/nginx/ssl
     
-    # Create Caddyfile
-    sudo tee /etc/caddy/Caddyfile > /dev/null << 'EOF'
-# AI-Premise HTTPS Configuration
-{
-    # Enable automatic HTTPS with self-signed certificates
-    auto_https off
+    # Generate self-signed certificate (100 years validity)
+    log_info "Generating self-signed SSL certificate..."
+    sudo openssl req -x509 -nodes -days 36500 -newkey rsa:2048 \
+        -keyout /etc/nginx/ssl/nginx.key \
+        -out /etc/nginx/ssl/nginx.crt \
+        -subj "/C=US/ST=State/L=City/O=AI-Premise/CN=localhost" \
+        -addext "subjectAltName=DNS:openwebui.local,DNS:ollama.local,DNS:monitor.local,DNS:localhost,IP:127.0.0.1"
+    
+    # Set proper permissions
+    sudo chmod 600 /etc/nginx/ssl/nginx.key
+    sudo chmod 644 /etc/nginx/ssl/nginx.crt
+    
+    # Create Nginx configuration
+    sudo tee /etc/nginx/nginx.conf > /dev/null << 'EOF'
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
 }
 
-# OpenWebUI HTTPS Proxy
-openwebui.local {
-    tls internal
-    reverse_proxy 127.0.0.1:8080 {
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
+http {
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+    
+    access_log /var/log/nginx/access.log main;
+    
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    
+    # SSL Configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    
+    # OpenWebUI HTTPS Proxy
+    server {
+        listen 443 ssl http2;
+        server_name openwebui.local;
+        
+        ssl_certificate /etc/nginx/ssl/nginx.crt;
+        ssl_certificate_key /etc/nginx/ssl/nginx.key;
+        
+        location / {
+            proxy_pass http://127.0.0.1:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+        }
     }
-}
-
-# Ollama API HTTPS Proxy
-ollama.local {
-    tls internal
-    reverse_proxy 127.0.0.1:11434 {
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
+    
+    # Ollama API HTTPS Proxy
+    server {
+        listen 443 ssl http2;
+        server_name ollama.local;
+        
+        ssl_certificate /etc/nginx/ssl/nginx.crt;
+        ssl_certificate_key /etc/nginx/ssl/nginx.key;
+        
+        location / {
+            proxy_pass http://127.0.0.1:11434;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+        }
     }
-}
-
-# Glances System Monitor HTTPS Proxy
-monitor.local {
-    tls internal
-    reverse_proxy 127.0.0.1:61208 {
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
+    
+    # Glances System Monitor HTTPS Proxy
+    server {
+        listen 443 ssl http2;
+        server_name monitor.local;
+        
+        ssl_certificate /etc/nginx/ssl/nginx.crt;
+        ssl_certificate_key /etc/nginx/ssl/nginx.key;
+        
+        location / {
+            proxy_pass http://127.0.0.1:61208;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+        }
     }
 }
 EOF
 
-    # Set proper permissions
-    sudo chown caddy:caddy /etc/caddy/Caddyfile
-    sudo chmod 644 /etc/caddy/Caddyfile
+    # Test Nginx configuration
+    log_info "Testing Nginx configuration..."
+    sudo nginx -t
     
-    # Restart Caddy to apply configuration
-    sudo systemctl restart caddy
-    
-    log_success "Caddy configured with self-signed certificates"
-    log_info "HTTPS endpoints:"
-    log_info "  - OpenWebUI: https://openwebui.local"
-    log_info "  - Ollama API: https://ollama.local"
-    log_info "  - System Monitor: https://monitor.local"
+    if [ $? -eq 0 ]; then
+        log_success "Nginx configuration is valid"
+        
+        # Enable and start Nginx
+        sudo systemctl enable nginx
+        sudo systemctl start nginx
+        
+        # Verify Nginx is running
+        if systemctl is-active --quiet nginx; then
+            log_success "Nginx configured and started successfully"
+            log_info "HTTPS endpoints:"
+            log_info "  - OpenWebUI: https://openwebui.local"
+            log_info "  - Ollama API: https://ollama.local"
+            log_info "  - System Monitor: https://monitor.local"
+        else
+            log_error "Failed to start Nginx"
+            exit 1
+        fi
+    else
+        log_error "Nginx configuration test failed"
+        exit 1
+    fi
 }
 
 # Step 8: Install and Configure OpenWebUI
@@ -558,8 +630,8 @@ main() {
     ensure_essential_tools
     install_uv
     install_ollama
-    install_caddy
-    configure_caddy
+    install_nginx
+    configure_nginx
     configure_hosts
     configure_firewall
     install_glances
@@ -576,6 +648,7 @@ main() {
     log_info "  - System Monitor HTTPS: https://monitor.local"
     log_info "Local domains have been automatically configured in /etc/hosts"
     log_info "UFW firewall is active - only HTTPS (port 443) and SSH (port 22) are accessible externally"
+    log_info "Nginx HTTPS proxy is running with 100-year self-signed certificates"
     log_info "SSH service is enabled for remote administration"
     log_info "All services are configured to start automatically on system reboot"
 }
