@@ -277,7 +277,7 @@ configure_nginx() {
     
     # Create Nginx configuration
     sudo tee /etc/nginx/nginx.conf > /dev/null << 'EOF'
-user nginx;
+user http;
 worker_processes auto;
 error_log /var/log/nginx/error.log;
 pid /run/nginx.pid;
