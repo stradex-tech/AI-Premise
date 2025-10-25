@@ -530,7 +530,6 @@ install_glances() {
 [global]
 theme = white
 check_update = False
-disable = true
 
 # 🧩 Enable only desired plugins
 [plugins]
