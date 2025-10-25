@@ -529,8 +529,18 @@ install_glances() {
     
     # Install Python dependencies for web server mode
     log_info "Installing Glances web server dependencies..."
-    export PATH="$HOME/.local/bin:$PATH"
-    uv pip install --system fastapi uvicorn
+    
+    # Install pipx if not already installed
+    if ! command_exists pipx; then
+        log_info "Installing pipx for Python package management..."
+        sudo pacman -S --noconfirm python-pipx
+        log_success "pipx installed successfully"
+    fi
+    
+    # Install FastAPI and Uvicorn using pipx
+    log_info "Installing FastAPI and Uvicorn..."
+    pipx install fastapi
+    pipx install uvicorn
     log_success "Glances web dependencies installed"
     
     # Create glances config directory
