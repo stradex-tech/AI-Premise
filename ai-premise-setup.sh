@@ -75,20 +75,33 @@ install_gpu_drivers() {
     
     # Detect GPU vendor
     if command_exists lspci; then
-        GPU_VENDOR=$(lspci | grep -i vga | head -1 | tr '[:upper:]' '[:lower:]')
-        log_info "Detected GPU: $GPU_VENDOR"
+        GPU_VENDOR=$(lspci | grep -E 'VGA|3D|Display' | grep -i -o 'nvidia\|amd\|intel' | head -1)
         
-        if echo "$GPU_VENDOR" | grep -q nvidia; then
-            install_nvidia_drivers
-        elif echo "$GPU_VENDOR" | grep -q amd; then
-            install_amd_drivers
-        elif echo "$GPU_VENDOR" | grep -q intel; then
-            install_intel_drivers
-        else
-            log_warning "Unknown GPU vendor detected. Skipping driver installation."
+        if [ -z "$GPU_VENDOR" ]; then
+            log_info "No GPU detected. Skipping GPU driver installation."
+            log_info "System will run with CPU-only processing."
+            return
         fi
+        
+        log_info "Detected GPU vendor: $GPU_VENDOR"
+        
+        case "$GPU_VENDOR" in
+            nvidia)
+                install_nvidia_drivers
+                ;;
+            amd)
+                install_amd_drivers
+                ;;
+            intel)
+                install_intel_drivers
+                ;;
+            *)
+                log_warning "Unknown GPU vendor: $GPU_VENDOR. Skipping driver installation."
+                ;;
+        esac
     else
         log_warning "lspci not found. Cannot detect GPU. Skipping driver installation."
+        log_info "System will run with CPU-only processing."
     fi
 }
 
