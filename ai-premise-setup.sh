@@ -515,6 +515,18 @@ main() {
     # Get server IP address
     SERVER_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null || echo "127.0.0.1")
     
+    # Get GPU information for display
+    if command_exists lspci; then
+        GPU_INFO=$(lspci 2>/dev/null | grep -E 'VGA|3D|Display' 2>/dev/null | head -1 || echo "")
+        if [ -n "$GPU_INFO" ]; then
+            GPU_DISPLAY="🎮 GPU: $GPU_INFO"
+        else
+            GPU_DISPLAY="💻 Processing: CPU-only (no GPU detected)"
+        fi
+    else
+        GPU_DISPLAY="💻 Processing: CPU-only (GPU detection unavailable)"
+    fi
+    
     log_success "Setup completed successfully!"
     log_info ""
     log_info "🚀 AI-PREMISE SERVER IS READY! 🚀"
@@ -547,7 +559,7 @@ main() {
     log_info "📍 SERVER DETAILS:"
     log_info "═══════════════════════════════════════════════════════════════"
     log_info "🌍 Server IP Address: ${SERVER_IP}"
-    log_info "💻 CPU-only AI processing (no GPU required)"
+    log_info "${GPU_DISPLAY}"
     log_info "🐧 Arch Linux with Ollama + OpenWebUI"
     log_info ""
     log_info "🎉 Enjoy your AI-Premise server!"
