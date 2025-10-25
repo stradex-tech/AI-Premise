@@ -80,7 +80,8 @@ install_gpu_drivers() {
         if [ -z "$GPU_VENDOR" ]; then
             log_info "No GPU detected. Skipping GPU driver installation."
             log_info "System will run with CPU-only processing."
-            return
+            log_success "GPU detection completed - CPU-only mode"
+            return 0
         fi
         
         log_info "Detected GPU vendor: $GPU_VENDOR"
@@ -103,6 +104,8 @@ install_gpu_drivers() {
         log_warning "lspci not found. Cannot detect GPU. Skipping driver installation."
         log_info "System will run with CPU-only processing."
     fi
+    
+    log_success "GPU detection and driver installation completed"
 }
 
 install_nvidia_drivers() {
