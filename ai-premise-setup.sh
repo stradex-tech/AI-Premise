@@ -363,24 +363,6 @@ http {
         }
     }
     
-    # Glances System Monitor HTTPS Proxy (port 61209)
-    server {
-        listen 61209 ssl http2;
-        server_name _;
-        
-        ssl_certificate /etc/nginx/ssl/nginx.crt;
-        ssl_certificate_key /etc/nginx/ssl/nginx.key;
-        
-        location / {
-            proxy_pass http://127.0.0.1:61208;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Port $server_port;
-        }
-    }
 }
 EOF
 
@@ -496,8 +478,6 @@ configure_firewall() {
     sudo ufw allow 8443/tcp
     log_info "Allowing HTTPS traffic on port 11435..."
     sudo ufw allow 11435/tcp
-    log_info "Allowing HTTPS traffic on port 61209..."
-    sudo ufw allow 61209/tcp
     
     # Enable UFW
     log_info "Enabling UFW firewall..."
@@ -515,136 +495,6 @@ configure_firewall() {
     log_info "  - All outgoing traffic: ALLOWED"
 }
 
-# Step 11: Install and Configure Glances
-install_glances() {
-    log_info "Installing Glances system monitor..."
-    
-    if command_exists glances; then
-        log_info "Glances is already installed. Version: $(glances --version)"
-    else
-        log_info "Installing Glances..."
-        sudo pacman -S --noconfirm glances
-        log_success "Glances installed successfully"
-    fi
-    
-    # Install Python dependencies for web server mode
-    log_info "Installing Glances web server dependencies..."
-    
-    # Install pipx if not already installed
-    if ! command_exists pipx; then
-        log_info "Installing pipx for Python package management..."
-        sudo pacman -S --noconfirm python-pipx
-        log_success "pipx installed successfully"
-    fi
-    
-    # Install FastAPI and Uvicorn using pipx
-    log_info "Installing FastAPI and Uvicorn..."
-    pipx install fastapi
-    pipx install uvicorn
-    log_success "Glances web dependencies installed"
-    
-    # Create glances config directory
-    log_info "Creating Glances configuration..."
-    mkdir -p ~/.config/glances
-    
-    # Create custom glances configuration
-    cat > ~/.config/glances/glances.conf << 'EOF'
-# ~/.config/glances/glances.conf
-# 🌡️ Minimal Glances config for system monitoring (with temperatures)
-# Author: Stradex
-
-[global]
-theme = white
-check_update = False
-
-# 🧩 Enable only desired plugins
-[plugins]
-enable = cpu, mem, fs, gpu, sensors
-
-# 🧠 CPU Section
-[cpu]
-enable = true
-percpu = true
-show_cpu_temp = true
-alias = 🧠 CPU Usage 🌡️
-
-# 💾 Memory Section
-[mem]
-enable = true
-show_swap = True
-alias = 💾 Memory
-
-# 📀 Disk Section (Filesystem)
-[fs]
-enable = true
-hide_fs_type = tmpfs,devtmpfs
-hide_mount_point = /boot,/run
-alias = 📀 Disk Usage 🌡️
-
-# 🎮 GPU Section
-[gpu]
-enable = true
-show_name = true
-show_memory = true
-show_temp = true
-show_power = false
-show_clock = false
-alias = 🎮 GPU 🌡️
-
-# 🌡️ Sensors (for CPU, motherboard, or SSD temps)
-[sensors]
-enable = true
-alias = 🔥 System Temps
-hide_temp_under = 35
-
-# 🔌 Disable everything else
-[network]
-enable = false
-
-[docker]
-enable = false
-
-[processlist]
-enable = false
-
-[quicklook]
-enable = false
-EOF
-
-    log_success "Glances configuration created"
-}
-
-# Step 12: Configure Glances Web Server
-configure_glances_web() {
-    log_info "Configuring Glances web server..."
-    
-    # Create systemd service for Glances web server
-    sudo tee /etc/systemd/system/glances-web.service > /dev/null << EOF
-[Unit]
-Description=Glances Web Server
-After=network.target
-
-[Service]
-Type=simple
-User=$USER
-Group=$USER
-ExecStart=/usr/bin/glances -w -B 127.0.0.1 -p 61208
-Restart=always
-RestartSec=10
-Environment=HOME=$HOME
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    
-    # Reload systemd and enable service
-    sudo systemctl daemon-reload
-    sudo systemctl enable glances-web
-    sudo systemctl start glances-web
-    
-    log_success "Glances web server configured and started"
-    log_info "Glances web interface available at: http://127.0.0.1:61208"
-}
 
 # Main execution
 main() {
@@ -660,8 +510,6 @@ main() {
     install_nginx
     configure_nginx
     configure_firewall
-    install_glances
-    configure_glances_web
     install_openwebui
     
     # Get server IP address
@@ -671,8 +519,7 @@ main() {
     log_info "Services are now running:"
     log_info "  - OpenWebUI HTTPS: https://${SERVER_IP}:8443 (self-signed cert)"
     log_info "  - Ollama API HTTPS: https://${SERVER_IP}:11435 (self-signed cert)"
-    log_info "  - System Monitor HTTPS: https://${SERVER_IP}:61209 (self-signed cert)"
-    log_info "UFW firewall is active - HTTP (80), HTTPS (443, 8443, 11435, 61209) and SSH (22) are accessible"
+    log_info "UFW firewall is active - HTTP (80), HTTPS (443, 8443, 11435) and SSH (22) are accessible"
     log_info "Nginx HTTPS proxy is running with 10-year self-signed certificates"
     log_info "SSH service is enabled for remote administration"
     log_info "All services are configured to start automatically on system reboot"
