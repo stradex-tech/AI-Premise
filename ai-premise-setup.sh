@@ -75,7 +75,7 @@ install_gpu_drivers() {
     
     # Detect GPU vendor
     if command_exists lspci; then
-        GPU_VENDOR=$(lspci | grep -E 'VGA|3D|Display' | grep -i -o 'nvidia\|amd\|intel' | head -1)
+        GPU_VENDOR=$(lspci 2>/dev/null | grep -E 'VGA|3D|Display' 2>/dev/null | grep -i -o 'nvidia\|amd\|intel' 2>/dev/null | head -1 || echo "")
         
         if [ -z "$GPU_VENDOR" ]; then
             log_info "No GPU detected. Skipping GPU driver installation."
